@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#PBS -S /bin/bash
+#PBS -N Argonne_TPC_DEDUP
+#PBS -m n
+#PBS -l walltime=08:00:00
+#PBS -l select=1:ncpus=32:ngpus=4
+#PBS -o /eagle/argonne_tpc/yadunand/pesto_1_of_2_index.submit.stdout
+#PBS -e /eagle/argonne_tpc/yadunand/pesto_1_of_2_index.submit.stderr
+#PBS -l filesystems=home:grand:eagle
+#PBS -A argonne_tpc
+#PBS -q preemptable
+
+export JOBNAME="parsl.GlobusComputeEngine.block-9.1701979292.7644014"
+
+source ~/setup_agpt_env.sh
+which python3
+
+cd /lus/eagle/projects/argonne_tpc/yadunand/
+rm -Rf /dev/shm/index
+mkdir /dev/shm/index
+datasource=/lus/eagle/projects/argonne_tpc/yadunand/data-sources-copy/minhashes/peS2o
+
+
+python3 -m deduplication --multi --name peS2o \
+       --input data-sources-copy/minhashes/peS2o \
+       --skip-minhashing \
+       --minhash-dir $datasource \
+       --save-dir /dev/shm/index \
+       --output-file /lus/eagle/projects/argonne_tpc/yadunand/peS2o_all_dedup.csv \
+       --num $(( 5 * 10**8 ))
+
+mv /dev/shm/index /lus/eagle/projects/argonne_tpc/yadunand/index_individual/peS2o
+

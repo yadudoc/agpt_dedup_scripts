@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#PBS -S /bin/bash
+#PBS -N Argonne_TPC_DEDUP
+#PBS -m n
+#PBS -l walltime=08:00:00
+#PBS -l select=1:ncpus=32:ngpus=4
+#PBS -o /eagle/argonne_tpc/yadunand/pesto_1_of_2_index.submit.stdout
+#PBS -e /eagle/argonne_tpc/yadunand/pesto_1_of_2_index.submit.stderr
+#PBS -l filesystems=home:grand:eagle
+#PBS -A argonne_tpc
+#PBS -q preemptable
+set -ex
+
+export JOBNAME="parsl.GlobusComputeEngine.block-9.1701979292.7644014"
+
+source ~/setup_agpt_env.sh
+which python3
+
+source_index=/lus/eagle/projects/argonne_tpc/yadunand/combined_index_round_3/index
+
+datasources=(
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/ASM.pymupdf
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/ACM
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/Bioarxiv
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/OSTI
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/Medrxiv
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/NIH_LitArch
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/PMC-OA
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/IPCC
+    /lus/eagle/projects/argonne_tpc/yadunand/index_individual_round_3/CORE
+)
+
+OUTPUT_DIR=/lus/eagle/projects/argonne_tpc/yadunand/combined_index_round_3
+
+cd /lus/eagle/projects/argonne_tpc/yadunand/
+
+rm -Rf /dev/shm/combined
+echo "Copying index to /dev/shm/combined/index"
+mkdir -p /dev/shm/combined/
+cp -R /lus/eagle/projects/argonne_tpc/yadunand/combined_index_round_3/index /dev/shm/combined/
+
+for datasource in ${datasources[@]}
+do
+    sourcename=$(basename $datasource)
+    echo "Trying to find duplicates from $sourcename in combined index"
+    
+    DUPS_OUTPUT=$OUTPUT_DIR/$sourcename.dupes.csv
+    
+    python -m deduplication \
+           --single \
+           --name $sourcename \
+           --input $datasource \
+           --minhash-dir $datasource/minhashes \
+	   --skip-minhashing \
+           --save-dir /dev/shm/combined/index \
+           --output-file /dev/shm/combined/$sourcename.dupes.csv \
+           --sim-threshold 0.6 \
+           --fp 5.555500503649536e-12 \
+           --num $(( 5 * 10**8 ))
+
+done
+
+echo "Processing COMPLETE! MOVING DATA"
+#mv /dev/shm/combined/*csv $OUTPUT_DIR
+#mv /dev/shm/combined/index $OUTPUT_DIR
+echo "ALL COMPLETE!"

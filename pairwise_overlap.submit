@@ -1,0 +1,54 @@
+#!/bin/bash
+set -e
+
+indices=(
+    /home/yadunand/yadunand/index_individual/Bioarxiv
+    /home/yadunand/yadunand/index_individual/LLM4CS
+    /home/yadunand/yadunand/index_individual/Medrxiv
+    /home/yadunand/yadunand/index_individual/NIH_LitArch
+    /home/yadunand/yadunand/index_individual/OSTI
+    /home/yadunand/yadunand/index_individual/PMC-OA
+    /home/yadunand/yadunand/index_individual/RP1
+    /home/yadunand/yadunand/index_individual/peS2o
+)
+
+minhashes=(
+    /home/yadunand/yadunand/Bioarxiv
+    /home/yadunand/yadunand/Medrxiv
+    /home/yadunand/yadunand/NIH_LitArch
+    /home/yadunand/yadunand/OSTI
+    /home/yadunand/yadunand/PMC-OA
+    /home/yadunand/yadunand/TextCollections
+)
+
+mkdir -p /dev/shm/index
+
+for source_index in ${indices[@]}
+do
+    echo "Index: $source_index"
+
+    index_name=$(basename $source_index)
+    index="/dev/shm/index/$index_name"
+
+    for target_minhashes in ${minhashes[@]}
+    do
+
+	# Wipe previous index that could have been polluted
+	rm -rf $index
+	cp -R $source_index $index
+
+	target_name=$(basename target_minhashes)
+	echo "Starting dedup of $target_name against index:$index"
+	
+	python -m deduplication \
+	       --multi \
+	       --name $sourcename \
+	       --input $datasource \
+	       --minhash-dir $target_minhashes \
+	       --save-dir $index \
+	       --output-file /lus/eagle/projects/argonne_tpc/yadunand/pairwise_overlap/$source_index.$target.dupes.csv \
+	       --num $(( 5 * 10**8 ))
+    
+
+    done
+done

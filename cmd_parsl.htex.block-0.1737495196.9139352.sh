@@ -1,0 +1,1 @@
+process_worker_pool.py --debug  -a 10.140.56.127 -p 0 -c 8 -m None --poll 10 --task_port=54516 --result_port=54169 --cert_dir None --logdir=/lus/eagle/projects/argonne_tpc/yadunand/000/htex --block_id=0 --hb_period=15  --hb_threshold=120 --drain_period=None --cpu-affinity block-reverse  --mpi-launcher=mpiexec --available-accelerators 0 1 2 3
